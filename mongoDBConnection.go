@@ -3,17 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"github.com/joho/godotenv"
 )
 
 func SetupMongoDB() (*mongo.Client, error) {
+	_ = godotenv.Load()
+	uri := os.Getenv("MONGODB_URI")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb+srv://pccoeigchack:Indradhanu407@cluster0.pg7et7j.mongodb.net/pccoe_IGC"))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, fmt.Errorf("MongoDB connect issue: %v", err)
 	}

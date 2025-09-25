@@ -10,6 +10,7 @@ import (
 	"github.com/Mastermind730/igc-admin-backend/models"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -53,7 +54,11 @@ type UserResponse struct {
 	Username string `json:"username"`
 }
 
-var jwtSecret = []byte(getJWTSecret())
+func init() {
+	_ = godotenv.Load()
+}
+
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
@@ -414,8 +419,8 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 // CreateDefaultAdmin creates a default admin user
 func (h *UserHandler) CreateDefaultAdmin(c *gin.Context) {
-    username := "admin"
-    password := "igc#407@"
+    username := os.Getenv("ADMIN_USERNAME")
+    password := os.Getenv("ADMIN_PASSWORD")
 
     // Check if admin already exists
     existingUser, _ := h.DB.GetUserByUsername(username)
