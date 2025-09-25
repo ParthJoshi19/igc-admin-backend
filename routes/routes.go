@@ -40,6 +40,10 @@ func SetupRoutes(router *gin.Engine, userHandler *handlers.UserHandler, teamHand
 			teams.PUT("/:id/action", teamHandler.ApproveOrRejectTeamRegistration) // Approve/Reject team (admin)
 			teams.GET("/reg/:regNumber", teamHandler.GetTeamRegistrationByRegNumber) // Get team by registration number
 			teams.GET("/track/:track", teamHandler.GetTeamRegistrationsByTrack)      // Get teams by track
+			// New routes for allocation and judge evaluation
+			teams.PUT("/:id/allocate", userHandler.AllocateTeamToJudge) // Admin allocates team to judge
+			teams.GET("/allocated", userHandler.GetAllocatedTeamsForJudge) // Judge views allocated teams
+			teams.PUT("/:id/evaluate", userHandler.JudgeEvaluateTeam) // Judge approves/rejects team
 		}
 
 		// Health check route

@@ -497,6 +497,91 @@ func (h *UserHandler) CreateJudge(c *gin.Context) {
     })
 }
 
+// TeamAllocationRequest for admin to allocate team to judge
+// judgeId is the ObjectID hex string of the judge user
+// teamId is the ObjectID hex string of the team
+// Only admin can call this
+// Route: PUT /api/v1/team-registrations/:id/allocate
+// Body: { "judgeId": "..." }
+func (h *UserHandler) AllocateTeamToJudge(c *gin.Context) {
+    teamId := c.Param("id")
+    var req struct {
+        JudgeId string `json:"judgeId" binding:"required"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+        return
+    }
+    // Only admin can allocate
+    role, _ := c.Get("role")
+    if role != "admin" {
+        c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can allocate teams"})
+        return
+    }
+    // Update team with allocated judge
+    update := bson.M{"allocatedJudgeId": req.JudgeId}
+    updatedTeam, err := h.DB.UpdateTeamRegistration(teamId, update)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to allocate team", "details": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Team allocated to judge", "team": updatedTeam})
+}
+
+// Judge can view teams allocated to them
+// Route: GET /api/v1/team-registrations/allocated
+func (h *UserHandler) GetAllocatedTeamsForJudge(c *gin.Context) {
+    role, _ := c.Get("role")
+    userId, _ := c.Get("user_id")
+    if role != "judge" {
+        c.JSON(http.StatusForbidden, gin.H{"error": "Only judges can view allocated teams"})
+        return
+    }
+    filter := bson.M{"allocatedJudgeId": userId}
+    teams, err := h.DB.GetAllTeamRegistrations(100, 0, filter)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get allocated teams", "details": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"teams": teams})
+}
+
+// Judge can approve or reject allocated team
+// Route: PUT /api/v1/team-registrations/:id/evaluate
+// Body: { "decision": "approve"|"reject", "reason": "..." }
+func (h *UserHandler) JudgeEvaluateTeam(c *gin.Context) {
+    teamId := c.Param("id")
+    role, _ := c.Get("role")
+    userId, _ := c.Get("user_id")
+    if role != "judge" {
+        c.JSON(http.StatusForbidden, gin.H{"error": "Only judges can evaluate teams"})
+        return
+    }
+    var req struct {
+        Decision string `json:"decision" binding:"required,oneof=approve reject"`
+        Reason   string `json:"reason"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+        return
+    }
+    update := bson.M{"actionedBy": userId}
+    if req.Decision == "approve" {
+        update["registrationStatus"] = "approved"
+        update["approvedAt"] = time.Now()
+    } else {
+        update["registrationStatus"] = "rejected"
+        update["rejectedAt"] = time.Now()
+        update["rejectionReason"] = req.Reason
+    }
+    updatedTeam, err := h.DB.UpdateTeamRegistration(teamId, update)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update team status", "details": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Team evaluation updated", "team": updatedTeam})
+}
+
 // generateRandomID generates a random string for judge ID
 func generateRandomID() string {
     // Simple random string generator (for demo)
