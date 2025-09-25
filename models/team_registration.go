@@ -116,6 +116,7 @@ type TeamRegistration struct {
 	// Action tracking
 	RejectionReason string `bson:"rejectionReason,omitempty" json:"rejectionReason,omitempty" validate:"max=500"`
 	ActionedBy      string `bson:"actionedBy,omitempty" json:"actionedBy,omitempty" validate:"max=100"`
+    AllocatedJudgeID primitive.ObjectID `bson:"allocatedJudgeId,omitempty" json:"allocatedJudgeId,omitempty"`
 }
 
 // NewTeamRegistration creates a new team registration with default values

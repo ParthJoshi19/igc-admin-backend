@@ -18,6 +18,7 @@ func SetupRoutes(router *gin.Engine, userHandler *handlers.UserHandler, teamHand
 
 		// User routes (admin only - should be protected with middleware)
 		users := api.Group("/users")
+		users.Use(handlers.JWTAuthMiddleware())
 		{
 			users.POST("/", userHandler.CreateUser)           // Create new admin user
 			users.GET("/", userHandler.GetAllUsers)           // Get all users with pagination
@@ -28,6 +29,7 @@ func SetupRoutes(router *gin.Engine, userHandler *handlers.UserHandler, teamHand
 
 		// Team registration routes
 		teams := api.Group("/team-registrations")
+		teams.Use(handlers.JWTAuthMiddleware())
 		{
 			teams.POST("/", teamHandler.CreateTeamRegistration)              // Create new team registration
 			teams.GET("/", teamHandler.GetAllTeamRegistrations)              // Get all teams with filters
@@ -49,7 +51,7 @@ func SetupRoutes(router *gin.Engine, userHandler *handlers.UserHandler, teamHand
 			})
 		})
 	}
-
+	router.POST("/api/v1/create-default-admin", userHandler.CreateDefaultAdmin)
 	// Root health check
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{

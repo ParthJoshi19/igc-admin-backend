@@ -10,6 +10,7 @@ type User struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 	Username  string             `bson:"username" json:"username" validate:"required,min=3,max=50"`
 	Password  string             `bson:"password" json:"password,omitempty" validate:"required,min=6"`
+    Role      string             `bson:"role" json:"role" validate:"required,oneof=admin judge"`
 	CreatedAt time.Time          `bson:"createdAt,omitempty" json:"createdAt,omitempty"`
 	UpdatedAt time.Time          `bson:"updatedAt,omitempty" json:"updatedAt,omitempty"`
 }
@@ -19,6 +20,7 @@ func NewUser(username, password string) *User {
 	return &User{
 		Username:  username,
 		Password:  password,
+		Role:      "judge", // default role, can be set to "admin" when creating admin
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
