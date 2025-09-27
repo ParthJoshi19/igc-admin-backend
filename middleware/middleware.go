@@ -25,14 +25,48 @@ func Logger() gin.HandlerFunc {
 	})
 }
 
+// Define your list of allowed frontend URLs
+var allowedOrigins = []string{
+	"http://localhost:3000",
+	// "https://your-production-frontend.com",
+	// "https://your-staging-frontend.com",
+}
+
 // CORS middleware to handle cross-origin requests
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		// Get the Origin from the request header
+		origin := c.Request.Header.Get("Origin")
+		
+		// Check if the request origin is in the allowed list
+		isAllowed := false
+		for _, allowed := range allowedOrigins {
+			if origin == allowed {
+				isAllowed = true
+				break
+			}
+		}
+
+		if isAllowed {
+			// Set the Access-Control-Allow-Origin to the specific request origin
+			// This is mandatory when Access-Control-Allow-Credentials is true
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			// If not allowed, you can choose to skip setting the header
+			// or set a default non-functional value, but keeping it unset is cleaner.
+			// To be safe, we'll return early if an unauthorized origin is found on preflight.
+			if c.Request.Method == "OPTIONS" {
+				c.AbortWithStatus(403) // Forbidden
+				return
+			}
+		}
+		
+		// Set other headers as they were
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
 
+		// Handle preflight request
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
