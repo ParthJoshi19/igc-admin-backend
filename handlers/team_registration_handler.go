@@ -21,58 +21,58 @@ func NewTeamRegistrationHandler(db *models.DatabaseService) *TeamRegistrationHan
 
 // CreateTeamRegistrationRequest represents the team registration request payload
 type CreateTeamRegistrationRequest struct {
-	TeamName              string                      `json:"teamName" binding:"required,max=100"`
-	LeaderName            string                      `json:"leaderName" binding:"required,max=100"`
-	LeaderEmail           string                      `json:"leaderEmail" binding:"required,email"`
-	LeaderMobile          string                      `json:"leaderMobile" binding:"required"`
-	LeaderGender          models.Gender               `json:"leaderGender" binding:"required"`
-	Institution           string                      `json:"institution" binding:"required,max=200"`
-	Program               models.Program              `json:"program" binding:"required"`
-	Country               string                      `json:"country" binding:"required,max=100"`
-	State                 string                      `json:"state" binding:"required,max=100"`
-	Members               []models.TeamMember         `json:"members"`
-	MentorName            string                      `json:"mentorName" binding:"required,max=100"`
-	MentorEmail           string                      `json:"mentorEmail" binding:"required,email"`
-	MentorMobile          string                      `json:"mentorMobile" binding:"required"`
-	MentorInstitution     string                      `json:"mentorInstitution" binding:"required,max=200"`
-	MentorDesignation     string                      `json:"mentorDesignation" binding:"required,max=100"`
-	InstituteNOC          *models.DriveFile           `json:"instituteNOC,omitempty"`
-	IDCardsPDF            *models.DriveFile           `json:"idCardsPDF,omitempty"`
-	TopicName             string                      `json:"topicName" binding:"required,max=200"`
-	TopicDescription      string                      `json:"topicDescription" binding:"required"`
-	Track                 models.Track                `json:"track" binding:"required"`
-	PresentationPPT       models.DriveFile            `json:"presentationPPT" binding:"required"`
+	TeamName          string              `json:"teamName" binding:"required,max=100"`
+	LeaderName        string              `json:"leaderName" binding:"required,max=100"`
+	LeaderEmail       string              `json:"leaderEmail" binding:"required,email"`
+	LeaderMobile      string              `json:"leaderMobile" binding:"required"`
+	LeaderGender      models.Gender       `json:"leaderGender" binding:"required"`
+	Institution       string              `json:"institution" binding:"required,max=200"`
+	Program           models.Program      `json:"program" binding:"required"`
+	Country           string              `json:"country" binding:"required,max=100"`
+	State             string              `json:"state" binding:"required,max=100"`
+	Members           []models.TeamMember `json:"members"`
+	MentorName        string              `json:"mentorName" binding:"required,max=100"`
+	MentorEmail       string              `json:"mentorEmail" binding:"required,email"`
+	MentorMobile      string              `json:"mentorMobile" binding:"required"`
+	MentorInstitution string              `json:"mentorInstitution" binding:"required,max=200"`
+	MentorDesignation string              `json:"mentorDesignation" binding:"required,max=100"`
+	InstituteNOC      *models.DriveFile   `json:"instituteNOC,omitempty"`
+	IDCardsPDF        *models.DriveFile   `json:"idCardsPDF,omitempty"`
+	TopicName         string              `json:"topicName" binding:"required,max=200"`
+	TopicDescription  string              `json:"topicDescription" binding:"required"`
+	Track             models.Track        `json:"track" binding:"required"`
+	PresentationPPT   models.DriveFile    `json:"presentationPPT" binding:"required"`
 }
 
 // UpdateTeamRegistrationRequest represents the update team registration request payload
 type UpdateTeamRegistrationRequest struct {
-	TeamName              string                      `json:"teamName,omitempty" binding:"omitempty,max=100"`
-	LeaderName            string                      `json:"leaderName,omitempty" binding:"omitempty,max=100"`
-	LeaderEmail           string                      `json:"leaderEmail,omitempty" binding:"omitempty,email"`
-	LeaderMobile          string                      `json:"leaderMobile,omitempty"`
-	LeaderGender          *models.Gender              `json:"leaderGender,omitempty"`
-	Institution           string                      `json:"institution,omitempty" binding:"omitempty,max=200"`
-	Program               *models.Program             `json:"program,omitempty"`
-	Country               string                      `json:"country,omitempty" binding:"omitempty,max=100"`
-	State                 string                      `json:"state,omitempty" binding:"omitempty,max=100"`
-	Members               []models.TeamMember         `json:"members,omitempty"`
-	MentorName            string                      `json:"mentorName,omitempty" binding:"omitempty,max=100"`
-	MentorEmail           string                      `json:"mentorEmail,omitempty" binding:"omitempty,email"`
-	MentorMobile          string                      `json:"mentorMobile,omitempty"`
-	MentorInstitution     string                      `json:"mentorInstitution,omitempty" binding:"omitempty,max=200"`
-	MentorDesignation     string                      `json:"mentorDesignation,omitempty" binding:"omitempty,max=100"`
-	InstituteNOC          *models.DriveFile           `json:"instituteNOC,omitempty"`
-	IDCardsPDF            *models.DriveFile           `json:"idCardsPDF,omitempty"`
-	TopicName             string                      `json:"topicName,omitempty" binding:"omitempty,max=200"`
-	TopicDescription      string                      `json:"topicDescription,omitempty"`
-	Track                 *models.Track               `json:"track,omitempty"`
-	PresentationPPT       *models.DriveFile           `json:"presentationPPT,omitempty"`
+	TeamName          string              `json:"teamName,omitempty" binding:"omitempty,max=100"`
+	LeaderName        string              `json:"leaderName,omitempty" binding:"omitempty,max=100"`
+	LeaderEmail       string              `json:"leaderEmail,omitempty" binding:"omitempty,email"`
+	LeaderMobile      string              `json:"leaderMobile,omitempty"`
+	LeaderGender      *models.Gender      `json:"leaderGender,omitempty"`
+	Institution       string              `json:"institution,omitempty" binding:"omitempty,max=200"`
+	Program           *models.Program     `json:"program,omitempty"`
+	Country           string              `json:"country,omitempty" binding:"omitempty,max=100"`
+	State             string              `json:"state,omitempty" binding:"omitempty,max=100"`
+	Members           []models.TeamMember `json:"members,omitempty"`
+	MentorName        string              `json:"mentorName,omitempty" binding:"omitempty,max=100"`
+	MentorEmail       string              `json:"mentorEmail,omitempty" binding:"omitempty,email"`
+	MentorMobile      string              `json:"mentorMobile,omitempty"`
+	MentorInstitution string              `json:"mentorInstitution,omitempty" binding:"omitempty,max=200"`
+	MentorDesignation string              `json:"mentorDesignation,omitempty" binding:"omitempty,max=100"`
+	InstituteNOC      *models.DriveFile   `json:"instituteNOC,omitempty"`
+	IDCardsPDF        *models.DriveFile   `json:"idCardsPDF,omitempty"`
+	TopicName         string              `json:"topicName,omitempty" binding:"omitempty,max=200"`
+	TopicDescription  string              `json:"topicDescription,omitempty"`
+	Track             *models.Track       `json:"track,omitempty"`
+	PresentationPPT   *models.DriveFile   `json:"presentationPPT,omitempty"`
 }
 
 // ApproveRejectRequest represents the approve/reject request payload
 type ApproveRejectRequest struct {
-	Action    string `json:"action" binding:"required,oneof=approve reject"`
-	Reason    string `json:"reason,omitempty"`
+	Action     string `json:"action" binding:"required,oneof=approve reject"`
+	Reason     string `json:"reason,omitempty"`
 	ActionedBy string `json:"actionedBy" binding:"required"`
 }
 
@@ -172,6 +172,13 @@ func (h *TeamRegistrationHandler) GetTeamRegistration(c *gin.Context) {
 		return
 	}
 
+	// If team is approved, try to fetch submitted video link
+	if team.IsApproved() {
+		if link, err := h.DB.GetVideoLinkForTeam(team); err == nil {
+			team.VideoLink = link
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"team": team,
 	})
@@ -193,6 +200,12 @@ func (h *TeamRegistrationHandler) GetTeamRegistrationByRegNumber(c *gin.Context)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Team registration not found"})
 		return
+	}
+
+	if team.IsApproved() {
+		if link, err := h.DB.GetVideoLinkForTeam(team); err == nil {
+			team.VideoLink = link
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -231,15 +244,17 @@ func (h *TeamRegistrationHandler) GetAllTeamRegistrations(c *gin.Context) {
 
 	// Build filter
 	filter := bson.M{}
-	
+	// Default to returning only approved teams unless a status is explicitly provided
 	if status := c.Query("status"); status != "" {
 		filter["registrationStatus"] = status
+	} else {
+		filter["registrationStatus"] = models.StatusApproved
 	}
-	
+
 	if track := c.Query("track"); track != "" {
 		filter["track"] = track
 	}
-	
+
 	if institution := c.Query("institution"); institution != "" {
 		filter["institution"] = bson.M{"$regex": institution, "$options": "i"}
 	}
@@ -251,8 +266,17 @@ func (h *TeamRegistrationHandler) GetAllTeamRegistrations(c *gin.Context) {
 		return
 	}
 
+	// Populate video link for approved teams
+	for _, t := range teams {
+		if t != nil && t.IsApproved() {
+			if link, err := h.DB.GetVideoLinkForTeam(t); err == nil {
+				t.VideoLink = link
+			}
+		}
+	}
+
 	// Get total count
-	total, err := h.DB.CountTeamRegistrations()
+	total, err := h.DB.CountTeamRegistrationsWithFilter(filter)
 	if err != nil {
 		total = 0
 	}
@@ -279,7 +303,7 @@ func (h *TeamRegistrationHandler) GetAllTeamRegistrations(c *gin.Context) {
 // @Router /api/team-registrations/track/{track} [get]
 func (h *TeamRegistrationHandler) GetTeamRegistrationsByTrack(c *gin.Context) {
 	track := models.Track(c.Param("track"))
-	
+
 	page := 1
 	limit := 10
 
@@ -296,10 +320,20 @@ func (h *TeamRegistrationHandler) GetTeamRegistrationsByTrack(c *gin.Context) {
 	}
 
 	skip := int64((page - 1) * limit)
-	teams, err := h.DB.GetTeamRegistrationsByTrack(track, int64(limit), skip)
+	// Return only approved teams for track listings
+	filter := bson.M{"track": track, "registrationStatus": models.StatusApproved}
+	teams, err := h.DB.GetAllTeamRegistrations(int64(limit), skip, filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve team registrations", "details": err.Error()})
 		return
+	}
+
+	for _, t := range teams {
+		if t != nil && t.IsApproved() {
+			if link, err := h.DB.GetVideoLinkForTeam(t); err == nil {
+				t.VideoLink = link
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -322,7 +356,7 @@ func (h *TeamRegistrationHandler) GetTeamRegistrationsByTrack(c *gin.Context) {
 // @Router /api/team-registrations/{id} [put]
 func (h *TeamRegistrationHandler) UpdateTeamRegistration(c *gin.Context) {
 	teamID := c.Param("id")
-	
+
 	var req UpdateTeamRegistrationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
@@ -437,7 +471,7 @@ func (h *TeamRegistrationHandler) UpdateTeamRegistration(c *gin.Context) {
 // @Router /api/team-registrations/{id}/action [put]
 func (h *TeamRegistrationHandler) ApproveOrRejectTeamRegistration(c *gin.Context) {
 	teamID := c.Param("id")
-	
+
 	var req ApproveRejectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
