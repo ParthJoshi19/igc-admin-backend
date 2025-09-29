@@ -266,20 +266,21 @@ func (h *TeamRegistrationHandler) GetAllTeamRegistrations(c *gin.Context) {
 		return
 	}
 
-	// Populate video link for approved teams
+	// Populate video link (based on registration number) and keep only teams that provided a video
+	filtered := make([]*models.TeamRegistration, 0, len(teams))
 	for _, t := range teams {
-		if t != nil && t.IsApproved() {
-			if link, err := h.DB.GetVideoLinkForTeam(t); err == nil {
-				t.VideoLink = link
-			}
+		if t == nil {
+			continue
+		}
+		if link, _, ok, err := h.DB.FindVideoByRegistration(t.RegistrationNumber); err == nil && ok && link != "" {
+			t.VideoLink = link
+			filtered = append(filtered, t)
 		}
 	}
+	teams = filtered
 
-	// Get total count
-	total, err := h.DB.CountTeamRegistrationsWithFilter(filter)
-	if err != nil {
-		total = 0
-	}
+	// Set total to the number of teams after filtering by video presence for accurate client display
+	total := len(teams)
 
 	c.JSON(http.StatusOK, gin.H{
 		"teams": teams,
@@ -328,13 +329,18 @@ func (h *TeamRegistrationHandler) GetTeamRegistrationsByTrack(c *gin.Context) {
 		return
 	}
 
+	// Keep only teams that provided a video (found by registration number)
+	filtered := make([]*models.TeamRegistration, 0, len(teams))
 	for _, t := range teams {
-		if t != nil && t.IsApproved() {
-			if link, err := h.DB.GetVideoLinkForTeam(t); err == nil {
-				t.VideoLink = link
-			}
+		if t == nil {
+			continue
+		}
+		if link, _, ok, err := h.DB.FindVideoByRegistration(t.RegistrationNumber); err == nil && ok && link != "" {
+			t.VideoLink = link
+			filtered = append(filtered, t)
 		}
 	}
+	teams = filtered
 
 	c.JSON(http.StatusOK, gin.H{
 		"teams": teams,

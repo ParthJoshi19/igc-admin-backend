@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,12 +26,17 @@ type DatabaseService struct {
 func NewDatabaseService(client *mongo.Client, dbName string) *DatabaseService {
 	db := client.Database(dbName)
 
+	videoCollectionName := os.Getenv("VIDEO_COLLECTION_NAME")
+	if videoCollectionName == "" {
+		videoCollectionName = "videos"
+	}
+
 	return &DatabaseService{
 		Client:         client,
 		Database:       db,
 		UserCollection: db.Collection("users"),
 		TeamCollection: db.Collection("teamregistrations"),
-		Videos:         db.Collection("videos"),
+		Videos:         db.Collection(videoCollectionName),
 	}
 }
 
@@ -298,6 +304,9 @@ func (db *DatabaseService) GetAllTeamRegistrations(limit int64, skip int64, filt
 	return teams, nil
 }
 
+// (optional) For future optimization: Use an aggregation with $lookup to fetch only teams with videos.
+// Keeping in-memory filtering in handlers for simplicity and clarity right now.
+
 // GetTeamRegistrationsByTrack retrieves teams by track
 func (db *DatabaseService) GetTeamRegistrationsByTrack(track Track, limit int64, skip int64) ([]*TeamRegistration, error) {
 	filter := bson.M{"track": track}
@@ -431,10 +440,16 @@ func (db *DatabaseService) GetVideoLinkForTeam(team *TeamRegistration) (string, 
 		return "", nil
 	}
 
-	// Try matching by teamId, registrationNumber, or teamName
+	// Prefer strict lookup by registration id/number
+	if link, _, ok, err := db.FindVideoByRegistration(team.RegistrationNumber); err == nil && ok {
+		return link, nil
+	} else if err != nil {
+		return "", err
+	}
+
+	// Fallback: Try matching by teamId or teamName
 	filter := bson.M{"$or": []bson.M{
 		{"teamId": team.TeamID},
-		{"registrationNumber": team.RegistrationNumber},
 		{"teamName": team.TeamName},
 	}}
 
@@ -457,6 +472,56 @@ func (db *DatabaseService) GetVideoLinkForTeam(team *TeamRegistration) (string, 
 		}
 	}
 	return "", nil
+}
+
+// FindVideoByRegistration looks up a video by registration id/number and returns (link, teamName, exists, error)
+func (db *DatabaseService) FindVideoByRegistration(reg string) (string, string, bool, error) {
+	ctx, cancel := db.getContext()
+	defer cancel()
+
+	if db.Videos == nil || reg == "" {
+		return "", "", false, nil
+	}
+
+	filter := bson.M{"$or": []bson.M{
+		{"registrationId": reg},
+		{"registration_id": reg},
+		{"registrationID": reg},
+		{"registrationNumber": reg},
+	}}
+
+	var doc bson.M
+	err := db.Videos.FindOne(ctx, filter).Decode(&doc)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", "", false, nil
+		}
+		return "", "", false, err
+	}
+
+	// Extract video link
+	link := ""
+	for _, k := range []string{"videoUrl", "videoURL", "videoLink", "link", "url"} {
+		if v, ok := doc[k]; ok {
+			if s, ok := v.(string); ok && s != "" {
+				link = s
+				break
+			}
+		}
+	}
+
+	// Extract team name from videos collection if available
+	teamName := ""
+	for _, k := range []string{"teamName", "team_name", "team"} {
+		if v, ok := doc[k]; ok {
+			if s, ok := v.(string); ok && s != "" {
+				teamName = s
+				break
+			}
+		}
+	}
+
+	return link, teamName, true, nil
 }
 
 // CountTeamRegistrationsByStatus returns count by status

@@ -36,7 +36,7 @@ type LoginRequest struct {
 // Role must be either "admin" or "judge"
 type UnifiedCreateUserRequest struct {
 	Username     string `json:"username" binding:"required,min=3,max=50"` // for admin, also used as email for judge
-	Password     string `json:"password" binding:"required,min=6"`         // for admin, judge can use judgeID as password
+	Password     string `json:"password" binding:"required,min=6"`        // for admin, judge can use judgeID as password
 	Role         string `json:"role" binding:"required,oneof=admin judge"`
 	Name         string `json:"name,omitempty"`         // for judge
 	Organization string `json:"organization,omitempty"` // for judge
@@ -71,10 +71,10 @@ func getJWTSecret() string {
 // GenerateJWT generates a JWT token for a user
 func GenerateJWT(user *models.User) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id":   user.ID.Hex(),
-		"username":  user.Username,
-		"role":      user.Role,
-		"exp":       time.Now().Add(time.Hour * 24).Unix(), // 24h expiry
+		"user_id":  user.ID.Hex(),
+		"username": user.Username,
+		"role":     user.Role,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(), // 24h expiry
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
@@ -335,7 +335,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 // @Router /api/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
-	
+
 	var req UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
@@ -419,87 +419,87 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 // CreateDefaultAdmin creates a default admin user
 func (h *UserHandler) CreateDefaultAdmin(c *gin.Context) {
-    username := os.Getenv("ADMIN_USERNAME")
-    password := os.Getenv("ADMIN_PASSWORD")
+	username := os.Getenv("ADMIN_USERNAME")
+	password := os.Getenv("ADMIN_PASSWORD")
 
-    // Check if admin already exists
-    existingUser, _ := h.DB.GetUserByUsername(username)
-    if existingUser != nil {
-        c.JSON(http.StatusConflict, gin.H{"error": "Admin user already exists"})
-        return
-    }
+	// Check if admin already exists
+	existingUser, _ := h.DB.GetUserByUsername(username)
+	if existingUser != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Admin user already exists"})
+		return
+	}
 
-    // Create new admin user
-    newUser := models.NewUser(username, password)
-    newUser.Role = "admin"
-    createdUser, err := h.DB.CreateUser(newUser)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create admin user", "details": err.Error()})
-        return
-    }
+	// Create new admin user
+	newUser := models.NewUser(username, password)
+	newUser.Role = "admin"
+	createdUser, err := h.DB.CreateUser(newUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create admin user", "details": err.Error()})
+		return
+	}
 
-    response := UserResponse{
-        ID:       createdUser.ID.Hex(),
-        Username: createdUser.Username,
-    }
+	response := UserResponse{
+		ID:       createdUser.ID.Hex(),
+		Username: createdUser.Username,
+	}
 
-    c.JSON(http.StatusCreated, gin.H{
-        "message": "Admin user created successfully",
-        "user":    response,
-    })
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Admin user created successfully",
+		"user":    response,
+	})
 }
 
 // CreateJudgeRequest represents the create judge request payload
 type CreateJudgeRequest struct {
-    Name         string `json:"name" binding:"required,min=3,max=100"`
-    Email        string `json:"email" binding:"required,email"`
-    Organization string `json:"organization" binding:"required,min=2,max=100"`
+	Name         string `json:"name" binding:"required,min=3,max=100"`
+	Email        string `json:"email" binding:"required,email"`
+	Organization string `json:"organization" binding:"required,min=2,max=100"`
 }
 
 // CreateJudge creates a new judge user
 func (h *UserHandler) CreateJudge(c *gin.Context) {
-    var req CreateJudgeRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
-        return
-    }
+	var req CreateJudgeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+		return
+	}
 
-    // Check if judge already exists by email
-    existingUser, _ := h.DB.GetUserByUsername(req.Email)
-    if existingUser != nil {
-        c.JSON(http.StatusConflict, gin.H{"error": "Judge with this email already exists"})
-        return
-    }
+	// Check if judge already exists by email
+	existingUser, _ := h.DB.GetUserByUsername(req.Email)
+	if existingUser != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Judge with this email already exists"})
+		return
+	}
 
-    // Generate unique judge ID
-    judgeID := "JUDGE-" + generateRandomID()
+	// Generate unique judge ID
+	judgeID := "JUDGE-" + generateRandomID()
 
-    // Create new judge user
-    newUser := models.NewUser(req.Email, judgeID) // password is judgeID for now
-    newUser.Role = "judge"
-    // Add extra fields to user model if needed (Name, Organization)
-    // For now, store in Username and add judgeID to a custom field if you extend the model
+	// Create new judge user
+	newUser := models.NewUser(req.Email, judgeID) // password is judgeID for now
+	newUser.Role = "judge"
+	// Add extra fields to user model if needed (Name, Organization)
+	// For now, store in Username and add judgeID to a custom field if you extend the model
 
-    createdUser, err := h.DB.CreateUser(newUser)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create judge", "details": err.Error()})
-        return
-    }
+	createdUser, err := h.DB.CreateUser(newUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create judge", "details": err.Error()})
+		return
+	}
 
-    response := gin.H{
-        "id":       createdUser.ID.Hex(),
-        "judgeId":  judgeID,
-        "name":     req.Name,
-        "email":    req.Email,
-        "organization": req.Organization,
-        "role":     "judge",
-        "password": judgeID, // for demo, return password as judgeID
-    }
+	response := gin.H{
+		"id":           createdUser.ID.Hex(),
+		"judgeId":      judgeID,
+		"name":         req.Name,
+		"email":        req.Email,
+		"organization": req.Organization,
+		"role":         "judge",
+		"password":     judgeID, // for demo, return password as judgeID
+	}
 
-    c.JSON(http.StatusCreated, gin.H{
-        "message": "Judge created successfully",
-        "judge":   response,
-    })
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Judge created successfully",
+		"judge":   response,
+	})
 }
 
 // TeamAllocationRequest for admin to allocate team to judge
@@ -509,94 +509,105 @@ func (h *UserHandler) CreateJudge(c *gin.Context) {
 // Route: PUT /api/v1/team-registrations/:id/allocate
 // Body: { "judgeId": "..." }
 func (h *UserHandler) AllocateTeamToJudge(c *gin.Context) {
-    teamId := c.Param("id")
-    var req struct {
-        JudgeId string `json:"judgeId" binding:"required"`
-    }
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
-        return
-    }
-    // Only admin can allocate
-    role, _ := c.Get("role")
-    if role != "admin" {
-        c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can allocate teams"})
-        return
-    }
-    // Update team with allocated judge
-    update := bson.M{"allocatedJudgeId": req.JudgeId}
-    updatedTeam, err := h.DB.UpdateTeamRegistration(teamId, update)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to allocate team", "details": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, gin.H{"message": "Team allocated to judge", "team": updatedTeam})
+	teamId := c.Param("id")
+	var req struct {
+		JudgeId string `json:"judgeId" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+		return
+	}
+	// Only admin can allocate
+	role, _ := c.Get("role")
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can allocate teams"})
+		return
+	}
+	// Update team with allocated judge
+	update := bson.M{"allocatedJudgeId": req.JudgeId}
+	updatedTeam, err := h.DB.UpdateTeamRegistration(teamId, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to allocate team", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Team allocated to judge", "team": updatedTeam})
 }
 
 // Judge can view teams allocated to them
 // Route: GET /api/v1/team-registrations/allocated
 func (h *UserHandler) GetAllocatedTeamsForJudge(c *gin.Context) {
-    role, _ := c.Get("role")
-    userId, _ := c.Get("user_id")
-    if role != "judge" {
-        c.JSON(http.StatusForbidden, gin.H{"error": "Only judges can view allocated teams"})
-        return
-    }
-    filter := bson.M{"allocatedJudgeId": userId}
-    teams, err := h.DB.GetAllTeamRegistrations(100, 0, filter)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get allocated teams", "details": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, gin.H{"teams": teams})
+	role, _ := c.Get("role")
+	userId, _ := c.Get("user_id")
+	if role != "judge" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only judges can view allocated teams"})
+		return
+	}
+	filter := bson.M{"allocatedJudgeId": userId}
+	teams, err := h.DB.GetAllTeamRegistrations(100, 0, filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get allocated teams", "details": err.Error()})
+		return
+	}
+	// Keep only allocated teams that have submitted a video (match by registration number)
+	filtered := make([]*models.TeamRegistration, 0, len(teams))
+	for _, t := range teams {
+		if t == nil {
+			continue
+		}
+		if link, _, ok, err := h.DB.FindVideoByRegistration(t.RegistrationNumber); err == nil && ok && link != "" {
+			t.VideoLink = link
+			filtered = append(filtered, t)
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"teams": filtered})
 }
 
 // Judge can approve or reject allocated team
 // Route: PUT /api/v1/team-registrations/:id/evaluate
 // Body: { "decision": "approve"|"reject", "reason": "..." }
 func (h *UserHandler) JudgeEvaluateTeam(c *gin.Context) {
-    teamId := c.Param("id")
-    role, _ := c.Get("role")
-    userId, _ := c.Get("user_id")
-    if role != "judge" {
-        c.JSON(http.StatusForbidden, gin.H{"error": "Only judges can evaluate teams"})
-        return
-    }
-    var req struct {
-        Decision string `json:"decision" binding:"required,oneof=approve reject"`
-        Reason   string `json:"reason"`
-    }
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
-        return
-    }
-    update := bson.M{"actionedBy": userId}
-    if req.Decision == "approve" {
-        update["registrationStatus"] = "approved"
-        update["approvedAt"] = time.Now()
-    } else {
-        update["registrationStatus"] = "rejected"
-        update["rejectedAt"] = time.Now()
-        update["rejectionReason"] = req.Reason
-    }
-    updatedTeam, err := h.DB.UpdateTeamRegistration(teamId, update)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update team status", "details": err.Error()})
-        return
-    }
-    c.JSON(http.StatusOK, gin.H{"message": "Team evaluation updated", "team": updatedTeam})
+	teamId := c.Param("id")
+	role, _ := c.Get("role")
+	userId, _ := c.Get("user_id")
+	if role != "judge" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only judges can evaluate teams"})
+		return
+	}
+	var req struct {
+		Decision string `json:"decision" binding:"required,oneof=approve reject"`
+		Reason   string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+		return
+	}
+	update := bson.M{"actionedBy": userId}
+	if req.Decision == "approve" {
+		update["registrationStatus"] = "approved"
+		update["approvedAt"] = time.Now()
+	} else {
+		update["registrationStatus"] = "rejected"
+		update["rejectedAt"] = time.Now()
+		update["rejectionReason"] = req.Reason
+	}
+	updatedTeam, err := h.DB.UpdateTeamRegistration(teamId, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update team status", "details": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Team evaluation updated", "team": updatedTeam})
 }
 
 // generateRandomID generates a random string for judge ID
 func generateRandomID() string {
-    // Simple random string generator (for demo)
-    rand.Seed(time.Now().UnixNano())
-    letters := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-    b := make([]rune, 6)
-    for i := range b {
-        b[i] = letters[rand.Intn(len(letters))]
-    }
-    return string(b)
+	// Simple random string generator (for demo)
+	rand.Seed(time.Now().UnixNano())
+	letters := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	b := make([]rune, 6)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
 
 // Helper function to parse integer from string
@@ -604,7 +615,7 @@ func parseInt(s string) int {
 	if s == "" {
 		return 0
 	}
-	
+
 	result := 0
 	for _, char := range s {
 		if char < '0' || char > '9' {
