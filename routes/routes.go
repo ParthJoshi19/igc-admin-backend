@@ -17,8 +17,8 @@ func SetupRoutes(router *gin.Engine, userHandler *handlers.UserHandler, teamHand
 		}
 
 		// User routes (admin only - should be protected with middleware)
+		// users.Use(handlers.JWTAuthMiddleware())
 		users := api.Group("/users")
-		users.Use(handlers.JWTAuthMiddleware())
 		{
 			users.POST("/", userHandler.CreateUser)           // Create new admin user
 			users.GET("/", userHandler.GetAllUsers)           // Get all users with pagination

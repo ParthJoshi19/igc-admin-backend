@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-
+  "github.com/gin-contrib/cors"
 	"github.com/Mastermind730/igc-admin-backend/handlers"
 	"github.com/Mastermind730/igc-admin-backend/middleware"
 	"github.com/Mastermind730/igc-admin-backend/models"
@@ -33,8 +33,27 @@ func main() {
 	router := gin.New()
 	
 	// Add middleware
+	corsConfig := cors.Config{
+		AllowOrigins: []string{
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+		},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Length", 
+			"Content-Type",
+			"Authorization",
+			"Accept",
+			"X-Requested-With",
+			"Cache-Control",
+		},
+		AllowCredentials: true,
+		MaxAge: 12 * 60 * 60, // 12 hours
+	}
+
+	router.Use(cors.New(corsConfig))
 	router.Use(middleware.Logger())
-	router.Use(middleware.CORS())
 	router.Use(middleware.ErrorHandler())
 	router.Use(gin.Recovery())
 	
