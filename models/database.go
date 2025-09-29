@@ -14,21 +14,23 @@ import (
 
 // Database service struct
 type DatabaseService struct {
-	Client               *mongo.Client
-	Database             *mongo.Database
-	UserCollection       *mongo.Collection
-	TeamCollection       *mongo.Collection
+	Client         *mongo.Client
+	Database       *mongo.Database
+	UserCollection *mongo.Collection
+	TeamCollection *mongo.Collection
+	Videos         *mongo.Collection
 }
 
 // NewDatabaseService creates a new database service
 func NewDatabaseService(client *mongo.Client, dbName string) *DatabaseService {
 	db := client.Database(dbName)
-	
+
 	return &DatabaseService{
 		Client:         client,
 		Database:       db,
 		UserCollection: db.Collection("users"),
 		TeamCollection: db.Collection("teamregistrations"),
+		Videos:         db.Collection("videos"),
 	}
 }
 
@@ -43,16 +45,16 @@ func (db *DatabaseService) getContext() (context.Context, context.CancelFunc) {
 func (db *DatabaseService) CreateUser(user *User) (*User, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	user.ID = primitive.NewObjectID()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
-	
+
 	result, err := db.UserCollection.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	user.ID = result.InsertedID.(primitive.ObjectID)
 	return user, nil
 }
@@ -61,12 +63,12 @@ func (db *DatabaseService) CreateUser(user *User) (*User, error) {
 func (db *DatabaseService) GetUserByID(id string) (*User, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.New("invalid user ID format")
 	}
-	
+
 	var user User
 	filter := bson.M{"_id": objectID}
 	err = db.UserCollection.FindOne(ctx, filter).Decode(&user)
@@ -76,7 +78,7 @@ func (db *DatabaseService) GetUserByID(id string) (*User, error) {
 		}
 		return nil, err
 	}
-	
+
 	return &user, nil
 }
 
@@ -84,7 +86,7 @@ func (db *DatabaseService) GetUserByID(id string) (*User, error) {
 func (db *DatabaseService) GetUserByUsername(username string) (*User, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	var user User
 	filter := bson.M{"username": username}
 	err := db.UserCollection.FindOne(ctx, filter).Decode(&user)
@@ -94,7 +96,7 @@ func (db *DatabaseService) GetUserByUsername(username string) (*User, error) {
 		}
 		return nil, err
 	}
-	
+
 	return &user, nil
 }
 
@@ -102,14 +104,14 @@ func (db *DatabaseService) GetUserByUsername(username string) (*User, error) {
 func (db *DatabaseService) GetAllUsers(limit int64, skip int64) ([]*User, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	opts := options.Find().SetLimit(limit).SetSkip(skip)
 	cursor, err := db.UserCollection.Find(ctx, bson.M{}, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-	
+
 	var users []*User
 	for cursor.Next(ctx) {
 		var user User
@@ -118,11 +120,11 @@ func (db *DatabaseService) GetAllUsers(limit int64, skip int64) ([]*User, error)
 		}
 		users = append(users, &user)
 	}
-	
+
 	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return users, nil
 }
 
@@ -130,21 +132,21 @@ func (db *DatabaseService) GetAllUsers(limit int64, skip int64) ([]*User, error)
 func (db *DatabaseService) UpdateUser(id string, updateData bson.M) (*User, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.New("invalid user ID format")
 	}
-	
+
 	updateData["updatedAt"] = time.Now()
 	update := bson.M{"$set": updateData}
 	filter := bson.M{"_id": objectID}
-	
+
 	_, err = db.UserCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return db.GetUserByID(id)
 }
 
@@ -152,22 +154,22 @@ func (db *DatabaseService) UpdateUser(id string, updateData bson.M) (*User, erro
 func (db *DatabaseService) DeleteUser(id string) error {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return errors.New("invalid user ID format")
 	}
-	
+
 	filter := bson.M{"_id": objectID}
 	result, err := db.UserCollection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
-	
+
 	if result.DeletedCount == 0 {
 		return errors.New("user not found")
 	}
-	
+
 	return nil
 }
 
@@ -175,7 +177,7 @@ func (db *DatabaseService) DeleteUser(id string) error {
 func (db *DatabaseService) CountUsers() (int64, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	count, err := db.UserCollection.CountDocuments(ctx, bson.M{})
 	return count, err
 }
@@ -186,25 +188,25 @@ func (db *DatabaseService) CountUsers() (int64, error) {
 func (db *DatabaseService) CreateTeamRegistration(team *TeamRegistration) (*TeamRegistration, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	// Generate registration number and team ID
 	count, err := db.TeamCollection.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
-	
+
 	team.ID = primitive.NewObjectID()
 	team.RegistrationNumber = fmt.Sprintf("PCCOEIGC%03d", count+1)
 	team.TeamID = fmt.Sprintf("IGC%03d", count+1)
 	team.CreatedAt = time.Now()
 	team.UpdatedAt = time.Now()
 	team.SubmittedAt = time.Now()
-	
+
 	result, err := db.TeamCollection.InsertOne(ctx, team)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	team.ID = result.InsertedID.(primitive.ObjectID)
 	return team, nil
 }
@@ -213,12 +215,12 @@ func (db *DatabaseService) CreateTeamRegistration(team *TeamRegistration) (*Team
 func (db *DatabaseService) GetTeamRegistrationByID(id string) (*TeamRegistration, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.New("invalid team registration ID format")
 	}
-	
+
 	var team TeamRegistration
 	filter := bson.M{"_id": objectID}
 	err = db.TeamCollection.FindOne(ctx, filter).Decode(&team)
@@ -228,7 +230,7 @@ func (db *DatabaseService) GetTeamRegistrationByID(id string) (*TeamRegistration
 		}
 		return nil, err
 	}
-	
+
 	return &team, nil
 }
 
@@ -236,7 +238,7 @@ func (db *DatabaseService) GetTeamRegistrationByID(id string) (*TeamRegistration
 func (db *DatabaseService) GetTeamRegistrationByTeamName(teamName string) (*TeamRegistration, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	var team TeamRegistration
 	filter := bson.M{"teamName": teamName}
 	err := db.TeamCollection.FindOne(ctx, filter).Decode(&team)
@@ -246,7 +248,7 @@ func (db *DatabaseService) GetTeamRegistrationByTeamName(teamName string) (*Team
 		}
 		return nil, err
 	}
-	
+
 	return &team, nil
 }
 
@@ -254,7 +256,7 @@ func (db *DatabaseService) GetTeamRegistrationByTeamName(teamName string) (*Team
 func (db *DatabaseService) GetTeamRegistrationByRegistrationNumber(regNumber string) (*TeamRegistration, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	var team TeamRegistration
 	filter := bson.M{"registrationNumber": regNumber}
 	err := db.TeamCollection.FindOne(ctx, filter).Decode(&team)
@@ -264,7 +266,7 @@ func (db *DatabaseService) GetTeamRegistrationByRegistrationNumber(regNumber str
 		}
 		return nil, err
 	}
-	
+
 	return &team, nil
 }
 
@@ -272,14 +274,14 @@ func (db *DatabaseService) GetTeamRegistrationByRegistrationNumber(regNumber str
 func (db *DatabaseService) GetAllTeamRegistrations(limit int64, skip int64, filter bson.M) ([]*TeamRegistration, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	opts := options.Find().SetLimit(limit).SetSkip(skip).SetSort(bson.M{"submittedAt": -1})
 	cursor, err := db.TeamCollection.Find(ctx, filter, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-	
+
 	var teams []*TeamRegistration
 	for cursor.Next(ctx) {
 		var team TeamRegistration
@@ -288,11 +290,11 @@ func (db *DatabaseService) GetAllTeamRegistrations(limit int64, skip int64, filt
 		}
 		teams = append(teams, &team)
 	}
-	
+
 	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return teams, nil
 }
 
@@ -318,21 +320,21 @@ func (db *DatabaseService) GetTeamRegistrationsByInstitution(institution string,
 func (db *DatabaseService) UpdateTeamRegistration(id string, updateData bson.M) (*TeamRegistration, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.New("invalid team registration ID format")
 	}
-	
+
 	updateData["updatedAt"] = time.Now()
 	update := bson.M{"$set": updateData}
 	filter := bson.M{"_id": objectID}
-	
+
 	_, err = db.TeamCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return db.GetTeamRegistrationByID(id)
 }
 
@@ -342,16 +344,16 @@ func (db *DatabaseService) ApproveTeamRegistration(id, actionedBy string) (*Team
 	if err != nil {
 		return nil, err
 	}
-	
+
 	team.Approve(actionedBy)
-	
+
 	updateData := bson.M{
 		"registrationStatus": StatusApproved,
 		"approvedAt":         team.ApprovedAt,
 		"actionedBy":         actionedBy,
 		"updatedAt":          time.Now(),
 	}
-	
+
 	return db.UpdateTeamRegistration(id, updateData)
 }
 
@@ -361,9 +363,9 @@ func (db *DatabaseService) RejectTeamRegistration(id, reason, actionedBy string)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	team.Reject(reason, actionedBy)
-	
+
 	updateData := bson.M{
 		"registrationStatus": StatusRejected,
 		"rejectionReason":    reason,
@@ -371,7 +373,7 @@ func (db *DatabaseService) RejectTeamRegistration(id, reason, actionedBy string)
 		"actionedBy":         actionedBy,
 		"updatedAt":          time.Now(),
 	}
-	
+
 	return db.UpdateTeamRegistration(id, updateData)
 }
 
@@ -379,22 +381,22 @@ func (db *DatabaseService) RejectTeamRegistration(id, reason, actionedBy string)
 func (db *DatabaseService) DeleteTeamRegistration(id string) error {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return errors.New("invalid team registration ID format")
 	}
-	
+
 	filter := bson.M{"_id": objectID}
 	result, err := db.TeamCollection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
-	
+
 	if result.DeletedCount == 0 {
 		return errors.New("team registration not found")
 	}
-	
+
 	return nil
 }
 
@@ -402,16 +404,66 @@ func (db *DatabaseService) DeleteTeamRegistration(id string) error {
 func (db *DatabaseService) CountTeamRegistrations() (int64, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	count, err := db.TeamCollection.CountDocuments(ctx, bson.M{})
 	return count, err
+}
+
+// CountTeamRegistrationsWithFilter returns the number of team registrations matching a filter
+func (db *DatabaseService) CountTeamRegistrationsWithFilter(filter bson.M) (int64, error) {
+	ctx, cancel := db.getContext()
+	defer cancel()
+
+	if filter == nil {
+		filter = bson.M{}
+	}
+	count, err := db.TeamCollection.CountDocuments(ctx, filter)
+	return count, err
+}
+
+// GetVideoLinkForTeam returns the submitted video link for a team if present.
+// It looks up in the "videos" collection using common identifiers.
+func (db *DatabaseService) GetVideoLinkForTeam(team *TeamRegistration) (string, error) {
+	ctx, cancel := db.getContext()
+	defer cancel()
+
+	if db.Videos == nil || team == nil {
+		return "", nil
+	}
+
+	// Try matching by teamId, registrationNumber, or teamName
+	filter := bson.M{"$or": []bson.M{
+		{"teamId": team.TeamID},
+		{"registrationNumber": team.RegistrationNumber},
+		{"teamName": team.TeamName},
+	}}
+
+	var doc bson.M
+	err := db.Videos.FindOne(ctx, filter).Decode(&doc)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", nil
+		}
+		return "", err
+	}
+
+	// Common field names where a URL might be stored
+	candidates := []string{"videoUrl", "videoURL", "videoLink", "link", "url"}
+	for _, k := range candidates {
+		if v, ok := doc[k]; ok {
+			if s, ok := v.(string); ok {
+				return s, nil
+			}
+		}
+	}
+	return "", nil
 }
 
 // CountTeamRegistrationsByStatus returns count by status
 func (db *DatabaseService) CountTeamRegistrationsByStatus(status RegistrationStatus) (int64, error) {
 	ctx, cancel := db.getContext()
 	defer cancel()
-	
+
 	filter := bson.M{"registrationStatus": status}
 	count, err := db.TeamCollection.CountDocuments(ctx, filter)
 	return count, err
@@ -420,33 +472,33 @@ func (db *DatabaseService) CountTeamRegistrationsByStatus(status RegistrationSta
 // GetTeamRegistrationStats returns registration statistics
 func (db *DatabaseService) GetTeamRegistrationStats() (map[string]int64, error) {
 	stats := make(map[string]int64)
-	
+
 	// Count total registrations
 	total, err := db.CountTeamRegistrations()
 	if err != nil {
 		return nil, err
 	}
 	stats["total"] = total
-	
+
 	// Count by status
 	approved, err := db.CountTeamRegistrationsByStatus(StatusApproved)
 	if err != nil {
 		return nil, err
 	}
 	stats["approved"] = approved
-	
+
 	pending, err := db.CountTeamRegistrationsByStatus(StatusPending)
 	if err != nil {
 		return nil, err
 	}
 	stats["pending"] = pending
-	
+
 	rejected, err := db.CountTeamRegistrationsByStatus(StatusRejected)
 	if err != nil {
 		return nil, err
 	}
 	stats["rejected"] = rejected
-	
+
 	return stats, nil
 }
 
@@ -454,7 +506,7 @@ func (db *DatabaseService) GetTeamRegistrationStats() (map[string]int64, error) 
 func (db *DatabaseService) Close() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	if err := db.Client.Disconnect(ctx); err != nil {
 		fmt.Printf("Error disconnecting from MongoDB: %v\n", err)
 	}
