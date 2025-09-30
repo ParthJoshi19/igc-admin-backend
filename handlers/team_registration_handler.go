@@ -266,13 +266,13 @@ func (h *TeamRegistrationHandler) GetAllTeamRegistrations(c *gin.Context) {
 		return
 	}
 
-	// Populate video link (based on registration number) and keep only teams that provided a video
+	// Populate video link (by registration number or teamId/teamName) and keep only teams that provided a video
 	filtered := make([]*models.TeamRegistration, 0, len(teams))
 	for _, t := range teams {
 		if t == nil {
 			continue
 		}
-		if link, _, ok, err := h.DB.FindVideoByRegistration(t.RegistrationNumber); err == nil && ok && link != "" {
+		if link, err := h.DB.GetVideoLinkForTeam(t); err == nil && link != "" {
 			t.VideoLink = link
 			filtered = append(filtered, t)
 		}
@@ -329,13 +329,13 @@ func (h *TeamRegistrationHandler) GetTeamRegistrationsByTrack(c *gin.Context) {
 		return
 	}
 
-	// Keep only teams that provided a video (found by registration number)
+	// Keep only teams that provided a video (by registration number or teamId/teamName)
 	filtered := make([]*models.TeamRegistration, 0, len(teams))
 	for _, t := range teams {
 		if t == nil {
 			continue
 		}
-		if link, _, ok, err := h.DB.FindVideoByRegistration(t.RegistrationNumber); err == nil && ok && link != "" {
+		if link, err := h.DB.GetVideoLinkForTeam(t); err == nil && link != "" {
 			t.VideoLink = link
 			filtered = append(filtered, t)
 		}

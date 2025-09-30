@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,6 +27,7 @@ type DatabaseService struct {
 func NewDatabaseService(client *mongo.Client, dbName string) *DatabaseService {
 	db := client.Database(dbName)
 
+	// Choose the videos collection name via env, default to "videos"
 	videoCollectionName := os.Getenv("VIDEO_COLLECTION_NAME")
 	if videoCollectionName == "" {
 		videoCollectionName = "videos"
@@ -479,6 +481,7 @@ func (db *DatabaseService) FindVideoByRegistration(reg string) (string, string, 
 	ctx, cancel := db.getContext()
 	defer cancel()
 
+	reg = strings.TrimSpace(reg)
 	if db.Videos == nil || reg == "" {
 		return "", "", false, nil
 	}
@@ -488,6 +491,8 @@ func (db *DatabaseService) FindVideoByRegistration(reg string) (string, string, 
 		{"registration_id": reg},
 		{"registrationID": reg},
 		{"registrationNumber": reg},
+		{"registration": reg},
+		{"regNumber": reg},
 	}}
 
 	var doc bson.M
@@ -501,7 +506,7 @@ func (db *DatabaseService) FindVideoByRegistration(reg string) (string, string, 
 
 	// Extract video link
 	link := ""
-	for _, k := range []string{"videoUrl", "videoURL", "videoLink", "link", "url"} {
+	for _, k := range []string{"videoUrl", "videoURL", "videoLink", "link", "url", "video", "youtube", "youtubeUrl", "driveUrl"} {
 		if v, ok := doc[k]; ok {
 			if s, ok := v.(string); ok && s != "" {
 				link = s
